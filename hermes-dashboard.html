@@ -344,7 +344,7 @@ function renderSessions(){
     card.appendChild(el("div","meta",s.key));
     const acts=el("div","actions");
     const dl=el("button","btn danger","Hapus");
-    dl.onclick=()=>delSession(s.key);
+    dl.onclick=()=>delSession(s.id);
     acts.appendChild(dl);
     card.appendChild(acts);
     box.appendChild(card);
@@ -356,7 +356,7 @@ async function delSession(key){
     const r=await api(
       "/api/session_delete",
       {method:"POST", headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({id:s.id})}
+       body:JSON.stringify({id:key})}
     );
     toast(r.ok?"Dihapus":("Gagal: "+(r.stderr||"")));
     await loadSessions();
