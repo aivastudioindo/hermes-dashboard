@@ -8,7 +8,7 @@ setiap profil Hermes secara realtime dari browser.
 - Buat skill baru & memory baru (field standar: `MEMORY.md`, `USER.md`, `NOTES.md`)
 - Tampilkan "terakhir diedit X menit lalu" secara live (auto-refresh 20 dtk)
 - UI mobile-friendly dengan hamburger navigation + FAB
-- 100% Python stdlib (server) + 1 file HTML — **tanpa npm/build**, jalan di Termux/ARM/VPS
+- 100% Python stdlib (server) + 1 file HTML — **tanpa npm/build**, jalan di Termux/ARM/VPS/Windows/macOS/Linux (platform apa pun yang mendukung Hermes)
 
 ---
 
