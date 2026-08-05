@@ -184,9 +184,9 @@ def walk_skills(skills_dir: str, manifest: dict, disabled: list) -> list:
     out.sort(key=lambda s: (s["category"], s["leaf"]))
     return out
 
-def memory_meta(home: str, name: str) -> dict:
+def memory_meta(home: str, name: str, custom_path: str = None) -> dict:
     # name is the file name (could be .md or .txt)
-    fpath = os.path.join(home, "memories", name)
+    fpath = custom_path or os.path.join(home, "memories", name)
     mtime = os.path.getmtime(fpath) if os.path.isfile(fpath) else 0
     return {
         "name": name,
@@ -217,9 +217,14 @@ def gather_data(profile: str) -> dict:
             if os.path.isfile(fp) and f.lower().endswith((".md", ".txt", ".markdown")):
                 existing[f] = memory_meta(home, f)
     memories = []
+    std_loc = {}
+    for name in STANDARD_MEM:
+        std_loc[name] = os.path.join(home, "SOUL.md") if name == "SOUL.md" else os.path.join(memories_dir, name)
     for name in STANDARD_MEM:
         if name in existing:
             memories.append(existing[name])
+        elif os.path.isfile(std_loc[name]):
+            memories.append(memory_meta(home, name, std_loc[name]))
         else:
             memories.append({
                 "name": name,
@@ -379,7 +384,7 @@ class Handler(BaseHTTPRequestHandler):
                     except OSError:
                         pass
             else:
-                fp = os.path.join(home, "memories", name)
+                fp = os.path.join(home, "SOUL.md") if name == "SOUL.md" else os.path.join(home, "memories", name)
                 if os.path.isfile(fp):
                     os.remove(fp)
             return self._send(200, {"ok": True})
