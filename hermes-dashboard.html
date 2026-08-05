@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>Hermes · Skill & Memory Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1115; --surface:#171a21; --surface-2:#1e222b; --ink:#e7e9ee;
+    --muted:#9aa3b2; --border:#262b36; --accent:#6ea8fe; --accent-2:#3b82f6;
+    --danger:#f87171; --ok:#4ade80; --warn:#fbbf24; --radius:14px;
+    --tap:44px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.5}
+  a{color:var(--accent)}
+  button{font:inherit;color:inherit;cursor:pointer}
+  /* Top bar */
+  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;
+    padding:10px 14px;background:rgba(15,17,21,.92);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border)}
+  .hamb{display:flex;flex-direction:column;justify-content:center;gap:4px;
+    width:40px;height:var(--tap);border:1px solid var(--border);border-radius:10px;
+    background:var(--surface);padding:0 9px}
+  .hamb span{height:2px;background:var(--ink);border-radius:2px;display:block}
+  .title{font-weight:650;font-size:16px;letter-spacing:.2px}
+  .profile-pill{margin-left:auto;display:flex;align-items:center;gap:8px;
+    background:var(--surface);border:1px solid var(--border);border-radius:999px;
+    padding:6px 12px;height:var(--tap)}
+  .profile-pill select{background:transparent;border:none;color:var(--ink);
+    font:inherit;outline:none;max-width:120px}
+  /* Drawer */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;opacity:0;
+    pointer-events:none;transition:opacity .2s}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;left:0;bottom:0;width:min(82vw,320px);z-index:50;
+    background:var(--surface);border-right:1px solid var(--border);
+    transform:translateX(-100%);transition:transform .22s ease;display:flex;flex-direction:column}
+  .drawer.open{transform:translateX(0)}
+  .drawer h2{padding:18px 18px 8px;margin:0;font-size:13px;text-transform:uppercase;
+    letter-spacing:1px;color:var(--muted)}
+  .navitem{display:flex;align-items:center;gap:12px;padding:14px 18px;min-height:var(--tap);
+    border:none;background:none;text-align:left;width:100%;color:var(--ink);
+    border-left:3px solid transparent}
+  .navitem.active{background:var(--surface-2);border-left-color:var(--accent)}
+  .navitem .count{margin-left:auto;background:var(--surface-2);border-radius:999px;
+    padding:2px 9px;font-size:12px;color:var(--muted)}
+  .drawer .foot{padding:14px 18px;color:var(--muted);font-size:12px;margin-top:auto}
+  /* Main */
+  main{padding:14px;max-width:1100px;margin:0 auto}
+  .sec-head{display:flex;align-items:center;gap:10px;margin:18px 2px 10px}
+  .sec-head h3{margin:0;font-size:15px}
+  .chip{font-size:12px;color:var(--muted);background:var(--surface);
+    border:1px solid var(--border);border-radius:999px;padding:2px 10px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:13px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+  .card .row1{display:flex;align-items:center;gap:10px}
+  .card .name{font-weight:600;font-size:15px;word-break:break-word}
+  .badge{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid transparent}
+  .badge.builtin{background:rgba(110,168,254,.12);color:var(--accent);border-color:rgba(110,168,254,.3)}
+  .badge.custom{background:rgba(74,222,128,.12);color:var(--ok);border-color:rgba(74,222,128,.3)}
+  .badge.off{background:rgba(248,113,113,.12);color:var(--danger);border-color:rgba(248,113,113,.3)}
+  .card .desc{color:var(--muted);font-size:13px;overflow:hidden;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .card .meta{color:var(--muted);font-size:12px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .btn{border:1px solid var(--border);background:var(--surface-2);border-radius:10px;
+    padding:0 14px;height:var(--tap);min-width:64px;display:inline-flex;align-items:center;
+    justify-content:center;gap:6px;transition:background .15s}
+  .btn:active{background:#2a2f3a}
+  .btn.primary{background:var(--accent-2);border-color:var(--accent-2);color:#fff}
+  .btn.danger{color:var(--danger);border-color:rgba(248,113,113,.35)}
+  .btn.warn{color:var(--warn);border-color:rgba(251,191,36,.35)}
+  .empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:14px}
+  .cat-head{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+    margin:18px 2px 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+  .live .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);
+    animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  /* Modal */
+  .modal-scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;
+    display:none;align-items:flex-end;justify-content:center}
+  .modal-scrim.open{display:flex}
+  .modal{background:var(--surface);width:100%;max-width:760px;border-radius:18px 18px 0 0;
+    max-height:92vh;display:flex;flex-direction:column;border:1px solid var(--border);
+    border-bottom:none}
+  @media(min-width:720px){.modal-scrim{align-items:center}.modal{border-radius:18px}}
+  .modal header{display:flex;align-items:center;gap:10px;padding:14px 16px;
+    border-bottom:1px solid var(--border)}
+  .modal header h3{margin:0;font-size:16px;flex:1}
+  .modal .body{padding:14px 16px;overflow:auto}
+  textarea,input.fname{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--border);
+    border-radius:10px;padding:12px;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+    resize:vertical;min-height:240px}
+  input.fname{font-family:inherit;min-height:auto;margin-bottom:10px}
+  .modal footer{display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--border)}
+  .modal footer .btn{flex:1}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+    background:var(--surface-2);border:1px solid var(--border);padding:11px 18px;border-radius:12px;
+    z-index:80;opacity:0;transition:.2s;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .fab{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:70;
+    width:56px;height:56px;border-radius:50%;border:none;background:var(--accent-2);color:#fff;
+    font-size:30px;line-height:1;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);transition:transform .15s,background .15s}
+  .fab:active{transform:scale(.92);background:var(--accent)}
+  @media(min-width:720px){ .fab{right:max(18px,calc((100vw - 1100px)/2 + 18px))} }
+  .seg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .seg button{flex:1;border:none;background:none;padding:0;height:var(--tap);color:var(--muted)}
+  .seg button.active{background:var(--surface-2);color:var(--ink)}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="hamb" id="hamb" aria-label="Menu"><span></span><span></span><span></span></button>
+    <div class="title">Hermes Dashboard</div>
+    <div class="profile-pill">
+      <span id="liveDot" class="live"><span class="dot"></span>live</span>
+      <select id="profileSel"></select>
+    </div>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+  <nav class="drawer" id="drawer">
+    <h2>Navigasi</h2>
+    <button class="navitem active" data-tab="skills">📦 Skills <span class="count" id="cntSkills">0</span></button>
+    <button class="navitem" data-tab="memories">🧠 Memory <span class="count" id="cntMem">0</span></button>
+    <div class="foot">Profil: <b id="footProfile">default</b><br>Edit skill & memory tiap profil secara realtime.</div>
+  </nav>
+
+  <main>
+    <div class="seg" style="margin-bottom:12px">
+      <button id="tabSkills" class="active" data-tab="skills">Skills</button>
+      <button id="tabMem" data-tab="memories">Memory</button>
+    </div>
+
+    <section id="panel-skills">
+      <div class="seg" style="margin-bottom:12px">
+        <button id="fltAll" class="active" data-flt="all">Semua <span id="chipSkills">0</span></button>
+        <button id="fltBuiltin" data-flt="builtin">Bawaan <span id="chipBuiltin">0</span></button>
+        <button id="fltCustom" data-flt="custom">Buatan <span id="chipCustom">0</span></button>
+      </div>
+      <div id="listSkills"></div>
+    </section>
+
+    <section id="panel-memories" style="display:none">
+      <div class="sec-head"><h3>Memory</h3><span class="chip" id="chipMem">0</span></div>
+      <div id="listMem"></div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-scrim" id="modalScrim">
+    <div class="modal">
+      <header>
+        <h3 id="modalTitle">Edit</h3>
+        <button class="btn" id="modalClose">Tutup</button>
+      </header>
+      <div class="body">
+        <input class="fname" id="fname" placeholder="nama (mis: kategori/leaf-skill atau notes.md)" style="display:none">
+        <textarea id="editor" placeholder="Isi konten..."></textarea>
+      </div>
+      <footer>
+        <button class="btn danger" id="btnDelete">Hapus</button>
+        <button class="btn primary" id="btnSave">Simpan</button>
+      </footer>
+    </div>
+  </div>
+
+  <button class="fab" id="addSkill" aria-label="Skill Baru">+</button>
+  <div class="toast" id="toast"></div>
+
+<script>
+const API = "";
+let state = { profile:"default", tab:"skills", data:null, edit:null };
+
+const $ = s => document.querySelector(s);
+const el = (t,c,h) => { const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e; };
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1800); }
+
+async function api(path,opts){ const r=await fetch(API+path,opts);
+  if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+async function loadProfiles(){
+  const {profiles}=await api("/api/profiles");
+  const sel=$("#profileSel"); sel.innerHTML="";
+  profiles.forEach(p=>{ const o=el("option"); o.value=p; o.textContent=p; sel.appendChild(o); });
+  sel.value=state.profile;
+}
+async function loadData(){
+  state.data=await api("/api/data?profile="+encodeURIComponent(state.profile));
+  render();
+}
+function render(){
+  const d=state.data; if(!d) return;
+  const builtin=d.skills.filter(s=>s.type==="builtin");
+  const custom=d.skills.filter(s=>s.type==="custom");
+  $("#cntSkills").textContent=d.skills.length;
+  $("#chipSkills").textContent=d.skills.length;
+  $("#cntMem").textContent=d.memories.length;
+  $("#chipBuiltin").textContent=builtin.length;
+  $("#chipCustom").textContent=custom.length;
+  $("#chipMem").textContent=d.memories.length;
+  $("#footProfile").textContent=state.profile;
+  // single grouped list (by category) with builtin/custom badges
+  renderList("#listSkills",d.skills,"skill");
+  renderList("#listMem",d.memories,"memory");
+}
+function relNow(items){ /* refresh relative times */ }
+function renderList(sel, items, kind){
+  const box=$(sel); box.innerHTML="";
+  if(!items.length){ box.appendChild(el("div","empty","— kosong —")); return; }
+  if(kind==="skill"){
+    // group by category
+    const cats={};
+    items.forEach(it=>{ (cats[it.category]=cats[it.category]||[]).push(it); });
+    Object.keys(cats).sort().forEach(cat=>{
+      box.appendChild(el("div","cat-head",cat));
+      cats[cat].forEach(it=>box.appendChild(skillCard(it)));
+    });
+  } else {
+    items.forEach(it=>box.appendChild(memCard(it)));
+  }
+}
+function skillCard(it){
+  const card=el("div","card");
+  const r1=el("div","row1");
+  r1.appendChild(el("div","name",it.leaf));
+  const b=el("span","badge "+(it.type==="builtin"?"builtin":"custom"), it.type==="builtin"?"bawaan":"buatan");
+  r1.appendChild(b);
+  if(!it.enabled){ r1.appendChild(el("span","badge off","nonaktif")); }
+  card.appendChild(r1);
+  if(it.description){ card.appendChild(el("div","desc",it.description)); }
+  card.appendChild(el("div","meta","diedit "+ (it.rel||"baru")));
+  const acts=el("div","actions");
+  const tg=el("button","btn warn", it.enabled?"Nonaktifkan":"Aktifkan");
+  tg.onclick=()=>toggleSkill(it.name);
+  acts.appendChild(tg);
+  const ed=el("button","btn","Edit");
+  ed.onclick=()=>openEditor("skill",it.name);
+  acts.appendChild(ed);
+  const dl=el("button","btn danger","Hapus");
+  dl.onclick=()=>del("skill",it.name);
+  acts.appendChild(dl);
+  card.appendChild(acts);
+  return card;
+}
+function memCard(it){
+  const card=el("div","card");
+  const r1=el("div","row1");
+  r1.appendChild(el("div","name",it.name));
+  if(it.empty){ r1.appendChild(el("span","badge custom","baru")); }
+  card.appendChild(r1);
+  if(it.empty){
+    card.appendChild(el("div","meta","belum ada — klik Edit untuk membuat"));
+  } else {
+    card.appendChild(el("div","meta","diedit "+ (it.rel||"baru")+" · "+it.size+" bytes"));
+  }
+  const acts=el("div","actions");
+  const ed=el("button","btn", it.empty?"Buat/Edit":"Edit");
+  ed.onclick=()=>openEditor("memory",it.name);
+  acts.appendChild(ed);
+  if(!it.empty){
+    const dl=el("button","btn danger","Hapus");
+    dl.onclick=()=>del("memory",it.name);
+    acts.appendChild(dl);
+  }
+  card.appendChild(acts);
+  return card;
+}
+async function toggleSkill(name){
+  try{ await api("/api/toggle",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({profile:state.profile,skill:name})});
+    toast(name+" diubah statusnya"); await loadData(); }
+  catch(e){ toast("Gagal: "+e.message); }
+}
+function openEditor(kind,name){
+  // determine create mode: memory field that doesn't exist yet
+  const item = (state.data && (kind==="memory"
+      ? state.data.memories.find(m=>m.name===name)
+      : state.data.skills.find(s=>s.name===name)));
+  const isEmpty = item && item.empty;
+  state.edit={kind,name,create:!!isEmpty};
+  $("#modalTitle").textContent=(isEmpty?"Buat ":"Edit ")+(kind==="skill"?"Skill":"Memory")+": "+name;
+  $("#fname").style.display="block";
+  $("#fname").value = name || "";
+  if(name && !isEmpty){
+    api("/api/raw?profile="+encodeURIComponent(state.profile)+"&kind="+kind+"&name="+encodeURIComponent(name))
+      .then(r=>{ $("#editor").value=r.content; })
+      .catch(()=>{ $("#editor").value=""; });
+  } else {
+    $("#editor").value = kind==="skill"
+      ? "# Isi panduan skill di sini...\n"
+      : (name==="MEMORY.md"
+          ? "# MEMORY.md\nTempat menyimpan fakta durable lintas sesi.\n"
+          : name==="USER.md"
+            ? "# USER.md\nProfil user: nama, peran, preferensi.\n"
+            : name==="NOTES.md"
+              ? "# NOTES.md\nCatatan bebas.\n"
+              : "# "+name+"\n");
+  }
+  $("#modalScrim").classList.add("open");
+}
+function createNew(kind){
+  state.edit={kind,name:"",create:true};
+  $("#modalTitle").textContent="Buat "+(kind==="skill"?"Skill":"Memory")+" Baru";
+  $("#fname").style.display="block";
+  $("#fname").value = kind==="skill" ? "" : "notes.md";
+  $("#editor").value = kind==="skill"
+    ? "# Isi panduan skill di sini...\n"
+    : "# Catatan baru\n";
+  $("#modalScrim").classList.add("open");
+  setTimeout(()=>$("#fname").focus(),50);
+}
+function closeModal(){ $("#modalScrim").classList.remove("open"); state.edit=null; }
+async function saveEdit(){
+  if(!state.edit) return;
+  const fname = $("#fname").value.trim();
+  const isCreate = state.edit.create;
+  // for create, name comes from fname; for edit-existing skill, fname = new relative path
+  const name = isCreate ? "" : state.edit.name;
+  const new_name = fname;
+  if(!fname){ toast("Nama wajib diisi"); return; }
+  try{
+    await api("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({profile:state.profile,kind:state.edit.kind,name,
+        content:$("#editor").value,new_name})});
+    toast(isCreate?"Dibuat":"Tersimpan"); closeModal(); await loadData();
+  }catch(e){ toast("Gagal simpan: "+e.message); }
+}
+async function del(kind,name){
+  if(!confirm("Hapus "+(kind==="skill"?"skill":"memory")+" '"+name+"'?")) return;
+  try{ await api("/api/delete",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({profile:state.profile,kind, name})});
+    toast("Dihapus"); await loadData(); }
+  catch(e){ toast("Gagal hapus: "+e.message); }
+}
+// nav / drawer
+function openDrawer(){ $("#drawer").classList.add("open"); $("#scrim").classList.add("open"); }
+function closeDrawer(){ $("#drawer").classList.remove("open"); $("#scrim").classList.remove("open"); }
+function setTab(tab){
+  state.tab=tab;
+  $("#panel-skills").style.display = tab==="skills"?"block":"none";
+  $("#panel-memories").style.display = tab==="memories"?"block":"none";
+  document.querySelectorAll(".navitem").forEach(n=>n.classList.toggle("active",n.dataset.tab===tab));
+  $("#tabSkills").classList.toggle("active",tab==="skills");
+  $("#tabMem").classList.toggle("active",tab==="memories");
+}
+// events
+$("#hamb").onclick=openDrawer;
+$("#scrim").onclick=closeDrawer;
+document.querySelectorAll(".navitem").forEach(n=>n.onclick=()=>{ setTab(n.dataset.tab); closeDrawer(); });
+$("#tabSkills").onclick=()=>setTab("skills");
+$("#tabMem").onclick=()=>setTab("memories");
+$("#profileSel").onchange=e=>{ state.profile=e.target.value; loadData(); };
+$("#modalClose").onclick=closeModal;
+$("#btnSave").onclick=saveEdit;
+$("#btnDelete").onclick=()=>{ if(state.edit && !state.edit.create) del(state.edit.kind,state.edit.name); };
+$("#modalScrim").onclick=e=>{ if(e.target.id==="modalScrim") closeModal(); };
+$("#addSkill").onclick=()=>createNew("skill");
+// skill filter (all / builtin / custom)
+document.querySelectorAll("#panel-skills .seg button").forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll("#panel-skills .seg button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    state.filter=b.dataset.flt;
+    applyFilter();
+  };
+});
+function applyFilter(){
+  const d=state.data; if(!d) return;
+  let items=d.skills;
+  if(state.filter==="builtin") items=d.skills.filter(s=>s.type==="builtin");
+  else if(state.filter==="custom") items=d.skills.filter(s=>s.type==="custom");
+  renderList("#listSkills",items,"skill");
+}
+// override render to respect filter
+const _origRender=render;
+render=function(){ _origRender(); applyFilter(); };
+
+// live refresh relative times every 20s
+setInterval(()=>{ if(state.data) loadData(); }, 20000);
+
+// init
+loadProfiles().then(()=>loadData());
+</script>
+</body>
+</html>
