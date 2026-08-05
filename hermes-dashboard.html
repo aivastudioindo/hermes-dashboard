@@ -261,7 +261,8 @@ function memCard(it){
   const card=el("div","card");
   const r1=el("div","row1");
   r1.appendChild(el("div","name",it.name));
-  if(it.empty){ r1.appendChild(el("span","badge custom","baru")); }
+  if(it.name==="SOUL.md"){ r1.appendChild(el("span","badge builtin","peran")); }
+  else if(it.empty){ r1.appendChild(el("span","badge custom","baru")); }
   card.appendChild(r1);
   if(it.empty){
     card.appendChild(el("div","meta","belum ada — klik Edit untuk membuat"));

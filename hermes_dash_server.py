@@ -205,7 +205,7 @@ def gather_data(profile: str) -> dict:
     # Standard memory files Hermes uses everywhere (default profile has them).
     # Always show these fields even if the profile doesn't have the file yet,
     # so the user can create them by editing. Extra real files are appended too.
-    STANDARD_MEM = ["MEMORY.md", "USER.md", "NOTES.md"]
+    STANDARD_MEM = ["SOUL.md", "MEMORY.md", "USER.md", "NOTES.md"]
     existing = {}
     if os.path.isdir(memories_dir):
         for f in sorted(os.listdir(memories_dir)):
