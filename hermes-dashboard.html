@@ -353,8 +353,11 @@ function renderSessions(){
 async function delSession(key){
   if(!confirm("Hapus sesi ini?\n"+key)) return;
   try{
-    const r=await api("/api/session_delete",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({id:s.id})));
+    const r=await api(
+      "/api/session_delete",
+      {method:"POST", headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({id:s.id})}
+    );
     toast(r.ok?"Dihapus":("Gagal: "+(r.stderr||"")));
     await loadSessions();
   }catch(e){ toast("Gagal hapus: "+e.message); }
