@@ -284,13 +284,23 @@ class Handler(BaseHTTPRequestHandler):
                     con = _sq.connect(db_path)
                     con.row_factory = _sq.Row
                     cur = con.cursor()
-                    cur.execute(
-                        "SELECT id, session_key, title, profile_name, message_count, "
-                        "last_activity_at, started_at, source FROM sessions "
-                        "WHERE (archived IS NULL OR archived = 0) AND profile_name = ? "
-                        "ORDER BY last_activity_at DESC LIMIT 200",
-                        (prof,)
-                    )
+                    if prof == "default":
+                        # Hermes stores default-profile sessions with profile_name NULL/'main'/''
+                        cur.execute(
+                            "SELECT id, session_key, title, profile_name, message_count, "
+                            "last_activity_at, started_at, source FROM sessions "
+                            "WHERE (archived IS NULL OR archived = 0) "
+                            "AND (profile_name IS NULL OR profile_name = '' OR profile_name = 'main' OR profile_name = 'default') "
+                            "ORDER BY last_activity_at DESC LIMIT 200"
+                        )
+                    else:
+                        cur.execute(
+                            "SELECT id, session_key, title, profile_name, message_count, "
+                            "last_activity_at, started_at, source FROM sessions "
+                            "WHERE (archived IS NULL OR archived = 0) AND profile_name = ? "
+                            "ORDER BY last_activity_at DESC LIMIT 200",
+                            (prof,)
+                        )
                     for r in cur.fetchall():
                         out.append({
                             "id": r["id"],
