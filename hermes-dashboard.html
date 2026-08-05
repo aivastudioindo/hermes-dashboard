@@ -333,7 +333,7 @@ function relFromTs(ts){
 function renderSessions(){
   const box=$("#listSess"); box.innerHTML="";
   const items=state.sessions||[];
-  if(!items.length){ box.appendChild(el("div","empty","— belum ada sesi —")); return; }
+  if(!items.length){ box.appendChild(el("div","empty","Profil \u2018"+state.profile+"\u2019 belum punya sesi. Chat di profil ini untuk membuat sesi baru.")); return; }
   items.forEach(s=>{
     const card=el("div","card");
     const r1=el("div","row1");
@@ -417,7 +417,7 @@ document.querySelectorAll(".navitem").forEach(n=>n.onclick=()=>{ setTab(n.datase
 $("#tabSkills").onclick=()=>setTab("skills");
 $("#tabMem").onclick=()=>setTab("memories");
 $("#tabSess").onclick=()=>setTab("sessions");
-$("#profileSel").onchange=e=>{ state.profile=e.target.value; loadData(); };
+$("#profileSel").onchange=e=>{ state.profile=e.target.value; loadData(); if(state.tab==="sessions") loadSessions(); };
 $("#modalClose").onclick=closeModal;
 $("#btnSave").onclick=saveEdit;
 $("#btnDelete").onclick=()=>{ if(state.edit && !state.edit.create) del(state.edit.kind,state.edit.name); };
