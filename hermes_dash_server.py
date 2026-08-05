@@ -18,6 +18,7 @@ Endpoints:
 """
 import json
 import os
+import subprocess
 import re
 import shutil
 from datetime import datetime
@@ -273,6 +274,37 @@ class Handler(BaseHTTPRequestHandler):
                 fp = os.path.join(home, "memories", name)
             content = open(fp, encoding="utf-8").read() if os.path.isfile(fp) else ""
             return self._send(200, {"content": content})
+        if u.path == "/api/sessions":
+            import sqlite3 as _sq
+            prof = qs.get("profile", ["default"])[0]
+            db_path = os.path.join(HERMES_HOME, "state.db")
+            out = []
+            if os.path.isfile(db_path):
+                try:
+                    con = _sq.connect(db_path)
+                    con.row_factory = _sq.Row
+                    cur = con.cursor()
+                    cur.execute(
+                        "SELECT id, session_key, title, profile_name, message_count, "
+                        "last_activity_at, started_at, source FROM sessions "
+                        "WHERE (archived IS NULL OR archived = 0) AND profile_name = ? "
+                        "ORDER BY last_activity_at DESC LIMIT 200",
+                        (prof,)
+                    )
+                    for r in cur.fetchall():
+                        out.append({
+                            "id": r["id"],
+                            "key": r["session_key"],
+                            "title": r["title"] or "(tanpa judul)",
+                            "profile": r["profile_name"] or "default",
+                            "messages": r["message_count"] or 0,
+                            "last": r["last_activity_at"] or 0,
+                            "source": r["source"] or "",
+                        })
+                    con.close()
+                except Exception as e:
+                    out = [{"error": str(e)}]
+            return self._send(200, {"sessions": out})
         self._send(404, {"error": "not found"})
 
     def do_POST(self):
@@ -352,6 +384,17 @@ class Handler(BaseHTTPRequestHandler):
                 disabled.append(leaf)
             write_disabled(home, disabled)
             return self._send(200, {"ok": True, "disabled": disabled})
+        if u.path == "/api/session_delete":
+            sid = data.get("id", "")
+            if not sid:
+                return self._send(400, {"error": "id kosong"})
+            env = dict(os.environ); env["PATH"] = "/data/data/com.termux/files/usr/bin:" + env.get("PATH","")
+            res = subprocess.run(
+                ["/data/data/com.termux/files/usr/bin/hermes", "sessions", "delete", sid, "--yes"],
+                capture_output=True, text=True, timeout=90,
+                cwd=HERMES_HOME, env=env,
+            )
+            return self._send(200, {"ok": res.returncode == 0, "stderr": res.stderr[:300]})
         self._send(404, {"error": "not found"})
 
     def log_message(self, *a):

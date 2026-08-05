@@ -125,17 +125,19 @@
 
   <div class="scrim" id="scrim"></div>
   <nav class="drawer" id="drawer">
-    <h2>Navigasi</h2>
-    <button class="navitem active" data-tab="skills">📦 Skills <span class="count" id="cntSkills">0</span></button>
-    <button class="navitem" data-tab="memories">🧠 Memory <span class="count" id="cntMem">0</span></button>
-    <div class="foot">Profil: <b id="footProfile">default</b><br>Edit skill & memory tiap profil secara realtime.</div>
+  <h2>Navigasi</h2>
+  <button class="navitem active" data-tab="skills">📦 Skills <span class="count" id="cntSkills">0</span></button>
+  <button class="navitem" data-tab="memories">🧠 Memory <span class="count" id="cntMem">0</span></button>
+  <button class="navitem" data-tab="sessions">💬 Sesi <span class="count" id="cntSess">0</span></button>
+  <div class="foot">Profil: <b id="footProfile">default</b><br>Edit skill & memory tiap profil secara realtime.</div>
   </nav>
 
   <main>
-    <div class="seg" style="margin-bottom:12px">
-      <button id="tabSkills" class="active" data-tab="skills">Skills</button>
-      <button id="tabMem" data-tab="memories">Memory</button>
-    </div>
+  <div class="seg" style="margin-bottom:12px">
+    <button id="tabSkills" class="active" data-tab="skills">Skills</button>
+    <button id="tabMem" data-tab="memories">Memory</button>
+    <button id="tabSess" data-tab="sessions">Sesi</button>
+  </div>
 
     <section id="panel-skills">
       <div class="seg" style="margin-bottom:12px">
@@ -149,6 +151,11 @@
     <section id="panel-memories" style="display:none">
       <div class="sec-head"><h3>Memory</h3><span class="chip" id="chipMem">0</span></div>
       <div id="listMem"></div>
+    </section>
+
+    <section id="panel-sessions" style="display:none">
+      <div class="sec-head"><h3>Sesi Chat</h3><span class="chip" id="chipSess">0</span></div>
+      <div id="listSess"></div>
     </section>
   </main>
 
@@ -175,7 +182,7 @@
 
 <script>
 const API = "";
-let state = { profile:"default", tab:"skills", data:null, edit:null };
+let state = { profile:"default", tab:"skills", data:null, edit:null, sessions:[] };
 
 const $ = s => document.querySelector(s);
 const el = (t,c,h) => { const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e; };
@@ -306,6 +313,52 @@ function openEditor(kind,name){
   }
   $("#modalScrim").classList.add("open");
 }
+async function loadSessions(){
+  try{
+    const d = await api("/api/sessions?profile="+encodeURIComponent(state.profile));
+    state.sessions = d.sessions || [];
+    $("#cntSess").textContent = state.sessions.length;
+    $("#chipSess").textContent = state.sessions.length;
+    renderSessions();
+  }catch(e){ toast("Gagal muat sesi: "+e.message); }
+}
+function relFromTs(ts){
+  if(!ts) return "—";
+  const diff=Date.now()/1000 - ts;
+  if(diff<60) return "baru saja";
+  if(diff<3600) return Math.floor(diff/60)+" mnt lalu";
+  if(diff<86400) return Math.floor(diff/3600)+" jam lalu";
+  return Math.floor(diff/86400)+" hari lalu";
+}
+function renderSessions(){
+  const box=$("#listSess"); box.innerHTML="";
+  const items=state.sessions||[];
+  if(!items.length){ box.appendChild(el("div","empty","— belum ada sesi —")); return; }
+  items.forEach(s=>{
+    const card=el("div","card");
+    const r1=el("div","row1");
+    r1.appendChild(el("div","name",s.title));
+    r1.appendChild(el("span","badge "+(s.profile==="default"?"builtin":"custom"), s.profile));
+    card.appendChild(r1);
+    card.appendChild(el("div","meta",relFromTs(s.last)+" · "+s.messages+" pesan · "+s.source));
+    card.appendChild(el("div","meta",s.key));
+    const acts=el("div","actions");
+    const dl=el("button","btn danger","Hapus");
+    dl.onclick=()=>delSession(s.key);
+    acts.appendChild(dl);
+    card.appendChild(acts);
+    box.appendChild(card);
+  });
+}
+async function delSession(key){
+  if(!confirm("Hapus sesi ini?\n"+key)) return;
+  try{
+    const r=await api("/api/session_delete",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id:s.id})));
+    toast(r.ok?"Dihapus":("Gagal: "+(r.stderr||"")));
+    await loadSessions();
+  }catch(e){ toast("Gagal hapus: "+e.message); }
+}
 function createNew(kind){
   state.edit={kind,name:"",create:true};
   $("#modalTitle").textContent="Buat "+(kind==="skill"?"Skill":"Memory")+" Baru";
@@ -347,9 +400,12 @@ function setTab(tab){
   state.tab=tab;
   $("#panel-skills").style.display = tab==="skills"?"block":"none";
   $("#panel-memories").style.display = tab==="memories"?"block":"none";
+  $("#panel-sessions").style.display = tab==="sessions"?"block":"none";
   document.querySelectorAll(".navitem").forEach(n=>n.classList.toggle("active",n.dataset.tab===tab));
   $("#tabSkills").classList.toggle("active",tab==="skills");
   $("#tabMem").classList.toggle("active",tab==="memories");
+  $("#tabSess").classList.toggle("active",tab==="sessions");
+  if(tab==="sessions") loadSessions();
 }
 // events
 $("#hamb").onclick=openDrawer;
@@ -357,6 +413,7 @@ $("#scrim").onclick=closeDrawer;
 document.querySelectorAll(".navitem").forEach(n=>n.onclick=()=>{ setTab(n.dataset.tab); closeDrawer(); });
 $("#tabSkills").onclick=()=>setTab("skills");
 $("#tabMem").onclick=()=>setTab("memories");
+$("#tabSess").onclick=()=>setTab("sessions");
 $("#profileSel").onchange=e=>{ state.profile=e.target.value; loadData(); };
 $("#modalClose").onclick=closeModal;
 $("#btnSave").onclick=saveEdit;
